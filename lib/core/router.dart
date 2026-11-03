@@ -10,6 +10,8 @@ import '../render/menu_route_page.dart';
 import '../render/render_page.dart';
 import '../widgets/common.dart';
 import 'auth/auth_controller.dart';
+import 'config.dart';
+import '../features/preview/preview_page.dart';
 
 /// Page → permission code (menu `perms`). The server enforces the same codes; this only avoids
 /// rendering pages the user can't use (deep links / stale bookmarks → /403).
@@ -26,6 +28,16 @@ const _public = {'/login', '/auth/callback', '/health'};
 String? authRedirect(AuthState auth, Uri uri) {
   final loc = uri.path;
   if (loc == '/auth/callback' || loc == '/health') return null;
+  // Dev/preview no-auth: dedicated SDUI route, no UUIMS login.
+  if (kDevNoAuth && (loc.startsWith('/preview/') || loc == '/preview')) {
+    return loc == '/preview' ? '/preview/showcase.index' : null;
+  }
+  if (kDevNoAuth) {
+    // Keep production shell routes gated; send bare entry to Showcase preview.
+    if (loc == '/login' || loc == '/splash' || loc == '/' || loc == '/dashboard') {
+      return '/preview/showcase.index';
+    }
+  }
   switch (auth.status) {
     case AuthStatus.unknown:
       return loc == '/splash' ? null : '/splash';
@@ -46,12 +58,21 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: kDevNoAuth ? '/preview/showcase.index' : '/',
     refreshListenable: refresh,
     redirect: (context, state) => authRedirect(ref.read(authProvider), state.uri),
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashPage()),
       GoRoute(path: '/login', builder: (_, _) => const LoginPage()),
+      // Dev/preview (NO_AUTH): shell-free SDUI host, e.g. /#/preview/showcase.index
+      GoRoute(
+        path: '/preview/:page',
+        builder: (_, s) => PreviewPage(
+          key: ValueKey(s.uri.toString()),
+          page: s.pathParameters['page']!,
+          params: s.uri.queryParameters,
+        ),
+      ),
       GoRoute(
         path: '/auth/callback',
         builder: (_, s) => CallbackPage(params: s.uri.queryParameters),

@@ -19,6 +19,13 @@ const String kDefaultApiBaseUrl = String.fromEnvironment(
 /// Desktop/mobile always use flutter_secure_storage (Keychain / DPAPI / libsecret).
 const String kWebTokenStorage = String.fromEnvironment('WEB_TOKEN_STORAGE', defaultValue: 'auto');
 
+/// Dev/preview: skip UUIMS login and allow `/preview/:page` SDUI rendering.
+/// Build with: `--dart-define=NO_AUTH=true` (or `PREVIEW=true`). Off = production auth unchanged.
+const bool kNoAuth = bool.fromEnvironment('NO_AUTH', defaultValue: false);
+const bool kPreview = bool.fromEnvironment('PREVIEW', defaultValue: false);
+bool get kDevNoAuth => kNoAuth || kPreview;
+
+
 /// Replaces `{host}` in [configured] with [pageHost] (web) or 127.0.0.1 (no page host).
 String resolveBaseUrl(String configured, {String? pageHost}) {
   if (!configured.contains('{host}')) return configured;
