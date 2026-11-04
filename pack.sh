@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Linux / WSL pack for 统一用户身份管理系统（UUIMS） PC (run from admin/client).
+# Linux / WSL pack for 统一用户身份管理系统（UUIMS） PC (run from uuims/client).
 # Builds: web + linux only. Uses native Linux `fvm` + .fvmrc (no auto-install).
 # Windows → .\pack.ps1   |   macOS → ./pack.command
 #

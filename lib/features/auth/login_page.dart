@@ -6,6 +6,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../core/api_client.dart';
 import '../../core/auth/auth_controller.dart';
+import '../../core/config.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../widgets/ui_settings.dart';
@@ -54,11 +55,13 @@ class LoginPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  Text(tr('统一用户身份管理系统（UUIMS）'),
+                  Text(kMockAuth ? tr('LowCode Showcase') : tr('统一用户身份管理系统（UUIMS）'),
                       textAlign: TextAlign.center, style: theme.textTheme.h3.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.4)),
                   const SizedBox(height: 6),
                   Text(
-                    kIsWeb ? tr('将跳转到认证中心登录（授权码 + PKCE）') : tr('将在系统浏览器中打开认证中心登录，完成后自动返回'),
+                    kMockAuth
+                        ? tr('本地演示：点击登录即可进入（模拟登录，无 OAuth）')
+                        : (kIsWeb ? tr('将跳转到认证中心登录（授权码 + PKCE）') : tr('将在系统浏览器中打开认证中心登录，完成后自动返回')),
                     textAlign: TextAlign.center,
                     style: theme.textTheme.muted,
                   ),
@@ -78,7 +81,9 @@ class LoginPage extends ConsumerWidget {
                           leading: auth.busy
                               ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                               : const Icon(LucideIcons.logIn, size: 16),
-                          child: Text(auth.busy ? (kIsWeb ? tr('正在跳转…') : tr('等待浏览器完成登录…')) : tr('登录')),
+                          child: Text(auth.busy
+                              ? (kMockAuth ? tr('正在登录…') : (kIsWeb ? tr('正在跳转…') : tr('等待浏览器完成登录…')))
+                              : tr('登录')),
                         ),
                         const SizedBox(height: 20),
                         Row(children: [

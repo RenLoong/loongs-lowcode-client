@@ -1,6 +1,6 @@
 # client
 
-LOONGS platform admin (PC)
+LOONGS platform uuims (PC)
 
 ## Getting Started
 

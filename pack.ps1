@@ -1,4 +1,4 @@
-# Windows pack for 统一用户身份管理系统（UUIMS） PC (run in PowerShell from admin/client).
+# Windows pack for 统一用户身份管理系统（UUIMS） PC (run in PowerShell from uuims/client).
 # Builds: web + windows only. Uses Windows `fvm` + .fvmrc (no auto-install).
 # Linux/WSL → ./pack.sh   |   macOS → ./pack.command
 #

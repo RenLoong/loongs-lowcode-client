@@ -277,7 +277,7 @@ class _ApiBlockState extends State<ApiBlock> {
 // ------------------------------------------------------------------ stat
 
 /// Stat card: `title`, `{field}` value through `format` (default `{value|thousands}`), optional
-/// trend ratio read from `<field>_<trend>` (then `<trend>`) — e.g. admins_mom: 0.125 → ↑ 12.5% 环比.
+/// trend ratio read from `<field>_<trend>` (then `<trend>`) — e.g. users_mom: 0.125 → ↑ 12.5% 环比.
 class StatValue extends StatelessWidget {
   const StatValue({super.key, required this.block, required this.data, this.onBlue = false});
 

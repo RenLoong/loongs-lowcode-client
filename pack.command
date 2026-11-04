@@ -1,5 +1,5 @@
 #!/bin/bash
-# macOS pack for 统一用户身份管理系统（UUIMS） PC (double-click or run from admin/client).
+# macOS pack for 统一用户身份管理系统（UUIMS） PC (double-click or run from uuims/client).
 # Builds: web + macos only. Uses macOS `fvm` + .fvmrc (no auto-install).
 # Linux/WSL → ./pack.sh   |   Windows → .\pack.ps1
 #

@@ -107,8 +107,13 @@ class AuthController extends Notifier<AuthState> {
 
   /// Starts the authorization-code + PKCE flow in the system browser.
   /// Web: same-tab redirect, completed by [completeWebCallback]. Desktop: loopback listener.
+  /// With [kMockAuth]: writes a fake token set and loads Showcase mock profile/menus.
   Future<void> login() async {
     if (state.busy) return;
+    if (kMockAuth) {
+      await _mockSignIn();
+      return;
+    }
     state = AuthState(status: AuthStatus.signedOut, busy: true);
     final pkce = Pkce.generate();
     final st = randomUrlSafe(16);
@@ -192,6 +197,10 @@ class AuthController extends Notifier<AuthState> {
   Future<String?> refreshAccess({String? sentToken}) async {
     final cur = state.tokens;
     if (cur == null) return null;
+    if (kMockAuth) {
+      // Mock tokens never rotate against a real oauth server.
+      return cur.accessToken.isEmpty ? 'mock-access' : cur.accessToken;
+    }
     if (sentToken != null && sentToken != 'Bearer ${cur.accessToken}' && !cur.expiresSoon()) {
       return cur.accessToken;
     }
@@ -219,10 +228,29 @@ class AuthController extends Notifier<AuthState> {
   Future<void> logout() async {
     final rt = state.tokens?.refreshToken;
     await _signOutLocal(null);
+    if (kMockAuth) return;
     if (rt != null) {
       try {
         await _oauth.revoke(rt);
       } catch (_) {}
+    }
+  }
+
+  /// Fake signed-in session for local LowCode (Showcase mock /auth/me + /auth/menus).
+  Future<void> _mockSignIn() async {
+    state = const AuthState(status: AuthStatus.signedOut, busy: true);
+    try {
+      final t = TokenSet(
+        accessToken: 'mock-access',
+        refreshToken: 'mock-refresh',
+        expiresAt: DateTime.now().add(const Duration(days: 365)),
+      );
+      await _store.write(t);
+      state = AuthState(status: AuthStatus.signedIn, tokens: t);
+      await loadSession();
+    } catch (e) {
+      await _store.clear();
+      state = AuthState.signedOut(error: _describe(e));
     }
   }
 

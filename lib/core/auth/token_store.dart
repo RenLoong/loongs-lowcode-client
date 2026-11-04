@@ -17,8 +17,8 @@ class TokenStore {
   final bool persistAccess;
   TokenSet? _mem;
 
-  static const _kTokens = 'loongs_admin.tokens';
-  static const _kPending = 'loongs_admin.pending_login';
+  static const _kTokens = 'loongs_uuims.tokens';
+  static const _kPending = 'loongs_uuims.pending_login';
 
   Future<TokenSet?> read() async {
     if (_mem != null) return _mem;

@@ -24,6 +24,7 @@ IconData? menuIcon(String? name) {
     'file-text' => LucideIcons.fileText,
     'bell' => LucideIcons.bell,
     'house' => LucideIcons.house,
+    'apps' => LucideIcons.layoutGrid,
     _ => null,
   };
 }

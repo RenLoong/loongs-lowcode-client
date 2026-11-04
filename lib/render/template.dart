@@ -28,7 +28,7 @@ String _str(Object? v) => switch (v) {
 String fillText(String text, Map<String, dynamic> data) => text.replaceAllMapped(_ph, (m) => _str(lookup(data, m[1]!)));
 
 /// API path / URL: values are URI-component encoded. Returns null when a placeholder is missing
-/// (so `/admins/{id}` is never called as `/admins/`).
+/// (so `/users/{id}` is never called as `/users/`).
 String? fillPath(String path, Map<String, dynamic> data) {
   var missing = false;
   final out = path.replaceAllMapped(_ph, (m) {

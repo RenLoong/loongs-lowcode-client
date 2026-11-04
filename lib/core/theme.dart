@@ -145,5 +145,25 @@ ShadThemeData appleTheme(Brightness b) {
     alertDialogTheme: ShadDialogTheme(radius: r14, backgroundColor: c.elevated, shadows: appleShadow(b)),
     sheetTheme: ShadSheetTheme(radius: r14, backgroundColor: c.elevated),
     popoverTheme: ShadPopoverTheme(shadows: appleShadow(b)),
+    // Element-style controls: radio = circle, checkbox = square; unselected fill white (not input gray).
+    radioTheme: ShadRadioTheme(
+      decoration: ShadDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        border: ShadBorder.all(color: cs.primary, width: 1),
+      ),
+    ),
+    checkboxTheme: ShadCheckboxTheme(
+      uncheckedColor: Colors.white,
+      decoration: ShadDecoration(
+        shape: BoxShape.rectangle,
+        color: Colors.white,
+        border: ShadBorder.all(
+          color: cs.primary,
+          width: 1,
+          radius: const BorderRadius.all(Radius.circular(3)),
+        ),
+      ),
+    ),
   );
 }

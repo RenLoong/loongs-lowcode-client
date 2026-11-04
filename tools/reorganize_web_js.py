@@ -6,7 +6,7 @@ ServeAppPublicMiddleware cannot serve an uninjected shell), patches
 js/flutter_bootstrap.js so the loader finds entrypoint + service worker
 under js/, and inserts <!--LOONGS_API_BASE_INJECT--> for ClientEntry.
 
-API base URL is injected at request time by admin server ClientEntry
+API base URL is injected at request time by uuims server ClientEntry
 (from OAUTH_ALLOWED_ORIGINS); this script does NOT write domain.js.
 
 Usage:

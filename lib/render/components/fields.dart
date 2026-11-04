@@ -9,6 +9,7 @@ import '../page_desc.dart';
 import '../render_api.dart';
 import '../template.dart';
 import 'unknown.dart';
+import 'fields_ep.dart';
 import '../../core/i18n.dart';
 
 /// Values + errors of one rendered form (or search bar).
@@ -121,7 +122,7 @@ bool fieldReadonly(Json f) => f['readonly'] == true || f['masked'] == true;
 
 typedef FieldBuilder = Widget Function(BuildContext context, Json field, FormController form, FieldEnv env, {bool dense});
 
-const Set<String> _textual = {'text', 'password', 'textarea', 'number', 'money', 'date', 'datetime', 'time', 'dateRange', 'json'};
+const Set<String> _textual = {'text', 'password', 'textarea', 'number', 'money', 'json'};
 
 Widget _textInput(BuildContext context, Json f, FormController form, FieldEnv env, {bool dense = false}) {
   final name = '${f['name']}';
@@ -220,7 +221,21 @@ class _MultiField extends StatelessWidget {
                 child: GestureDetector(
                   onTap: ro ? null : () => toggle(!on),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    ShadCheckbox(value: on, enabled: !ro, onChanged: toggle),
+                    ShadCheckbox(
+                      value: on,
+                      enabled: !ro,
+                      onChanged: toggle,
+                      uncheckedColor: Colors.white,
+                      decoration: ShadDecoration(
+                        shape: BoxShape.rectangle,
+                        color: Colors.white,
+                        border: ShadBorder.all(
+                          color: ShadTheme.of(context).colorScheme.primary,
+                          width: 1,
+                          radius: const BorderRadius.all(Radius.circular(3)),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 4),
                     Text(o.label),
                   ]),
@@ -255,7 +270,21 @@ class _RadioField extends StatelessWidget {
           axis: Axis.horizontal,
           spacing: 16,
           onChanged: (v) => form.set(name, opts.firstWhere((o) => '${o.value}' == v).value),
-          items: [for (final o in opts) ShadRadio<String>(value: '${o.value}', label: Text(o.label))],
+          items: [
+            for (final o in opts)
+              ShadRadio<String>(
+                value: '${o.value}',
+                label: Text(o.label),
+                decoration: ShadDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  border: ShadBorder.all(
+                    color: ShadTheme.of(context).colorScheme.primary,
+                    width: 1,
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );
@@ -279,8 +308,15 @@ Widget _switch(BuildContext context, Json f, FormController form, FieldEnv env, 
 /// Field renderers (RENDER.md §7 输入). Unknown components → [UnknownComponent].
 final Map<String, FieldBuilder> fieldRegistry = {
   for (final c in _textual) c: _textInput,
+  'date': (ctx, f, form, env, {bool dense = false}) => DateTimeFields.build(ctx, f, form, dense: dense),
+  'datetime': (ctx, f, form, env, {bool dense = false}) => DateTimeFields.build(ctx, f, form, dense: dense),
+  'time': (ctx, f, form, env, {bool dense = false}) => DateTimeFields.build(ctx, f, form, dense: dense),
+  'dateRange': (ctx, f, form, env, {bool dense = false}) => DateTimeFields.build(ctx, f, form, dense: dense),
   'select': (ctx, f, form, env, {bool dense = false}) =>
       f['multiple'] == true && !dense ? _MultiField(f, form, env) : _SelectField(f, form, env, dense: dense),
+  'virtualSelect': (ctx, f, form, env, {bool dense = false}) =>
+      f['multiple'] == true && !dense ? _MultiField(f, form, env) : _SelectField(f, form, env, dense: dense),
+  'timeSelect': (ctx, f, form, env, {bool dense = false}) => _SelectField(f, form, env, dense: dense),
   'treeSelect': (ctx, f, form, env, {bool dense = false}) => _SelectField(f, form, env, dense: dense),
   'cascader': (ctx, f, form, env, {bool dense = false}) => _SelectField(f, form, env, dense: dense),
   'radio': (ctx, f, form, env, {bool dense = false}) => dense ? _SelectField(f, form, env, dense: true) : _RadioField(f, form, env),
@@ -288,6 +324,17 @@ final Map<String, FieldBuilder> fieldRegistry = {
       ? _MultiField(f, form, env)
       : _switch(ctx, f, form, env),
   'switch': _switch,
+  'upload': (ctx, f, form, env, {bool dense = false}) => UploadField(f, form),
+  'image': (ctx, f, form, env, {bool dense = false}) => UploadField(f, form, imageOnly: true),
+  'richText': (ctx, f, form, env, {bool dense = false}) => RichTextField(f, form),
+  'color': (ctx, f, form, env, {bool dense = false}) => ColorField(f, form),
+  'autocomplete': (ctx, f, form, env, {bool dense = false}) => AutocompleteField(f, form, env),
+  'rate': (ctx, f, form, env, {bool dense = false}) => RateField(f, form),
+  'slider': (ctx, f, form, env, {bool dense = false}) => SliderField(f, form),
+  'inputTag': (ctx, f, form, env, {bool dense = false}) => InputTagField(f, form),
+  'otp': (ctx, f, form, env, {bool dense = false}) => OtpField(f, form),
+  'mention': (ctx, f, form, env, {bool dense = false}) => MentionField(f, form, env),
+  'transfer': (ctx, f, form, env, {bool dense = false}) => TransferField(f, form, env),
 };
 
 Widget buildField(BuildContext context, Json field, FormController form, FieldEnv env, {bool dense = false}) {

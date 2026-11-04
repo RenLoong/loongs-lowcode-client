@@ -213,7 +213,8 @@ class _FormViewState extends ConsumerState<FormView> {
           ]
         : asJsonList(_body['actions']);
     final form = LayoutBuilder(builder: (context, box) {
-      final w = box.maxWidth.isFinite ? box.maxWidth : 560.0;
+      // Floor width slightly so Wrap children cannot exceed the box by a sub-pixel (clips borders).
+      final w = (box.maxWidth.isFinite ? box.maxWidth : 560.0).floorToDouble();
       const gap = 16.0;
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
         for (final s in _sections) ...[
@@ -240,11 +241,20 @@ class _FormViewState extends ConsumerState<FormView> {
       ]);
     });
     if (widget.mode != 'page') return form;
+    // Align + maxWidth actually limits width (stretch Column would ignore ConstrainedBox alone).
+    // Horizontal padding keeps inputs/actions off the shell edges so focus rings are not clipped.
     return SingleChildScrollView(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        PageHeader(title: widget.desc.title),
-        ConstrainedBox(constraints: BoxConstraints(maxWidth: columns > 1 ? 960 : 560), child: form),
-      ]),
+      padding: const EdgeInsets.fromLTRB(8, 0, 16, 24),
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: columns > 1 ? 960 : 560),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            PageHeader(title: widget.desc.title),
+            form,
+          ]),
+        ),
+      ),
     );
   }
 }

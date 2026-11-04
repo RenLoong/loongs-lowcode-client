@@ -25,8 +25,8 @@ class GridCol {
 }
 
 /// Read-only TrinaGrid over server rows; rebuilt (keyed) whenever [rows] changes.
-class AdminGrid extends StatelessWidget {
-  const AdminGrid({super.key, required this.columns, required this.rows, this.loading = false});
+class UuimsGrid extends StatelessWidget {
+  const UuimsGrid({super.key, required this.columns, required this.rows, this.loading = false});
 
   final List<GridCol> columns;
   final List<GridRow> rows;

@@ -29,10 +29,11 @@ String? authRedirect(AuthState auth, Uri uri) {
   final loc = uri.path;
   if (loc == '/auth/callback' || loc == '/health') return null;
   // Dev/preview no-auth: dedicated SDUI route, no UUIMS login.
-  if (kDevNoAuth && (loc.startsWith('/preview/') || loc == '/preview')) {
+  // MOCK_AUTH uses the real /login → shell flow with a fake session instead.
+  if (kDevNoAuth && !kMockAuth && (loc.startsWith('/preview/') || loc == '/preview')) {
     return loc == '/preview' ? '/preview/showcase.index' : null;
   }
-  if (kDevNoAuth) {
+  if (kDevNoAuth && !kMockAuth) {
     // Keep production shell routes gated; send bare entry to Showcase preview.
     if (loc == '/login' || loc == '/splash' || loc == '/' || loc == '/dashboard') {
       return '/preview/showcase.index';
@@ -58,7 +59,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: kDevNoAuth ? '/preview/showcase.index' : '/',
+    initialLocation: (kDevNoAuth && !kMockAuth) ? '/preview/showcase.index' : '/',
     refreshListenable: refresh,
     redirect: (context, state) => authRedirect(ref.read(authProvider), state.uri),
     routes: [

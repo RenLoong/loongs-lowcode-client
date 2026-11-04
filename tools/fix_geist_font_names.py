@@ -75,8 +75,8 @@ def fix_assets_dir(assets: Path) -> list[str]:
 
 def main() -> int:
     roots = [Path(a) for a in sys.argv[1:]] or [
-        Path("/www/wwwroot/loong-swoole/admin/client/build/web/assets"),
-        Path("/www/wwwroot/loong-swoole/admin/server/apps/Uuims/public/web/assets"),
+        Path("/www/wwwroot/loong-swoole/uuims/client/build/web/assets"),
+        Path("/www/wwwroot/loong-swoole/uuims/server/apps/Uuims/public/web/assets"),
     ]
     for root in roots:
         print(f"== {root}")

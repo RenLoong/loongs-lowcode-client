@@ -44,7 +44,7 @@ Future<bool> confirmDialog(BuildContext context, String title, String descriptio
   return ok ?? false;
 }
 
-/// Renders [child] only when the current admin holds [code] (button permission).
+/// Renders [child] only when the current uuims holds [code] (button permission).
 class Can extends ConsumerWidget {
   const Can(this.code, {super.key, required this.child});
 

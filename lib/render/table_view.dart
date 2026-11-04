@@ -179,7 +179,11 @@ class _RenderTableViewState extends ConsumerState<RenderTableView> {
     final rows = _rows;
     final treeColumn = _tree == null ? null : '${_tree!['column'] ?? columns.firstOrNull?['field'] ?? ''}';
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    // Horizontal padding keeps filter inputs off the shell edges so focus rings are not clipped
+    // (same issue FormView fixed with SingleChildScrollView padding).
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 16, 0),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (!widget.embedded || toolbar.isNotEmpty)
         PageHeader(title: widget.embedded ? '' : widget.desc.title, actions: [
           for (final a in toolbar)
@@ -264,7 +268,8 @@ class _RenderTableViewState extends ConsumerState<RenderTableView> {
           if (selection && _selected.isNotEmpty) Text(tr('已选 {n} 条', {'n': _selected.length}), style: TextStyle(color: cs.mutedForeground, fontSize: 12)),
           Expanded(child: Pager(page: _data!.page, pageSize: _data!.pageSize, total: _data!.total, onPage: _load)),
         ]),
-    ]);
+    ]),
+    );
   }
 
   /// Tree column: indentation + expand / collapse toggle (leaf rows get a spacer).

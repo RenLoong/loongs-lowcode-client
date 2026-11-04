@@ -25,6 +25,10 @@ const bool kNoAuth = bool.fromEnvironment('NO_AUTH', defaultValue: false);
 const bool kPreview = bool.fromEnvironment('PREVIEW', defaultValue: false);
 bool get kDevNoAuth => kNoAuth || kPreview;
 
+/// Local LowCode: tap login → fake signed-in session (no OAuth /authorize).
+/// Build with: `--dart-define=MOCK_AUTH=true`. Production builds omit this define.
+const bool kMockAuth = bool.fromEnvironment('MOCK_AUTH', defaultValue: false);
+
 
 /// Replaces `{host}` in [configured] with [pageHost] (web) or 127.0.0.1 (no page host).
 String resolveBaseUrl(String configured, {String? pageHost}) {

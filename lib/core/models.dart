@@ -1,6 +1,6 @@
 import '../core/i18n.dart';
 
-/// Current admin (GET /uuims/api/auth/me).
+/// Current uuims (GET /uuims/api/auth/me).
 class Profile {
   const Profile({
     required this.id,
@@ -36,12 +36,12 @@ class Profile {
   final Set<String> permissions;
   final List<String> roles;
 
-  /// "resource.field" → hidden|masked|readonly|editable (empty for super admin).
+  /// "resource.field" → hidden|masked|readonly|editable (empty for super uuims).
   final Map<String, String> fields;
   final String? deptName;
   final String? dataScope;
 
-  /// `{admin: {mobile: masked}}` → `{admin.mobile: masked}`.
+  /// `{uuims: {mobile: masked}}` → `{uuims.mobile: masked}`.
   static Map<String, String> _flattenFields(Object? f) {
     final out = <String, String>{};
     if (f is Map) {

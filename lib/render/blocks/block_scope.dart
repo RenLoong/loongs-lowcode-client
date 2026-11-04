@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import '../page_desc.dart';
 
 /// Refresh signal of one dashboard / detail page: `refresh()` reloads every block,
-/// `refresh('stat_admins')` only the block with that id (RENDER.md §5.3 refresh `target`).
+/// `refresh('stat_users')` only the block with that id (RENDER.md §5.3 refresh `target`).
 class RefreshBus extends ChangeNotifier {
   int generation = 0;
 
