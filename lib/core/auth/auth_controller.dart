@@ -72,7 +72,8 @@ final tokenStoreProvider = Provider<TokenStore>((ref) {
     _ => TokenStore(sessionKv(), persistAccess: false),
   };
 });
-final oauthClientProvider = Provider<OAuthClient>((ref) => OAuthClient(ref.watch(baseUrlProvider)));
+final oauthIssuerProvider = Provider<String>((ref) => effectiveOAuthIssuer(pageHost: kIsWeb ? Uri.base.host : null));
+final oauthClientProvider = Provider<OAuthClient>((ref) => OAuthClient(ref.watch(oauthIssuerProvider)));
 
 /// Session lifecycle: restore → PKCE login (web redirect / desktop loopback) → profile + menus,
 /// single-flight refresh with rotation, logout (revoke).

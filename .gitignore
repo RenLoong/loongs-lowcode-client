@@ -50,3 +50,8 @@ app.*.map.json
 *.exe
 *.iss.bak
 /installer/Release/
+
+# Full CJK source (subset NotoSansSC-Regular.ttf is packaged)
+assets/fonts/PingFangSC-Regular.ttf
+assets/fonts/charset_cjk.txt
+

@@ -66,8 +66,18 @@ Widget optionBadge(BuildContext context, String label, String? color) {
   return ShadBadge(backgroundColor: bg, hoverBackgroundColor: bg, foregroundColor: Colors.white, child: Text(label));
 }
 
-Widget _text(BuildContext context, String s) =>
-    Align(alignment: Alignment.centerLeft, child: Text(s, overflow: TextOverflow.ellipsis, style: ShadTheme.of(context).textTheme.small.copyWith(fontWeight: FontWeight.normal)));
+Widget _text(BuildContext context, String s) {
+  final child = Align(
+    alignment: Alignment.centerLeft,
+    child: Text(
+      s,
+      overflow: TextOverflow.ellipsis,
+      style: ShadTheme.of(context).textTheme.small.copyWith(fontWeight: FontWeight.normal),
+    ),
+  );
+  if (s.isEmpty) return child;
+  return Tooltip(message: s, waitDuration: const Duration(milliseconds: 350), child: child);
+}
 
 /// Column renderers (RENDER.md §7 列/展示). Unknown components fall back to [UnknownComponent].
 final Map<String, CellBuilder> columnRegistry = {

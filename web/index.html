@@ -18,7 +18,7 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="LOONGS platform uuims (PC)">
+  <meta name="description" content="LOONGS platform Admin (PC)">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,22 +31,74 @@
 
   <title>client</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #f5f6f8;
+    }
+    #loongs-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: #f5f6f8;
+      color: #5c6370;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      transition: opacity 0.25s ease;
+    }
+    #loongs-splash.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loongs-splash .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #d8dde6;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: loongs-spin 0.8s linear infinite;
+    }
+    @keyframes loongs-spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
+  <div id="loongs-splash" aria-live="polite" aria-busy="true">
+    <div class="spinner" aria-hidden="true"></div>
+    <div>加载中…</div>
+  </div>
   <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-
-    Packed builds: ClientEntry.php replaces <!--LOONGS_API_BASE_INJECT--> with
-    window.__LOONGS_API_BASE_URL__ from OAUTH_ALLOWED_ORIGINS (first origin).
-    Local `flutter run` keeps dart-define / {host} fallback when the marker
-    is left as a comment (no runtime override).
+    Production: window.__LOONGS_API_BASE_URL__ must be the public HTTPS origin
+    (no :22000). Pack dart-define default is https://{host}.
+    Local flutter run can omit the script and fall back to dart-define / {host}.
   -->
-  <!--LOONGS_API_BASE_INJECT-->
+  <script>window.__LOONGS_API_BASE_URL__='https://lowcode.renloong.com';</script>
+  <script>
+    (function () {
+      var splash = document.getElementById('loongs-splash');
+      if (!splash) return;
+      var removed = false;
+      function hideSplash() {
+        if (removed) return;
+        removed = true;
+        splash.classList.add('is-hidden');
+        splash.setAttribute('aria-busy', 'false');
+        setTimeout(function () {
+          if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 280);
+      }
+      window.addEventListener('flutter-first-frame', hideSplash, { once: true });
+      // Fallback if first-frame never fires (broken load).
+      setTimeout(hideSplash, 60000);
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

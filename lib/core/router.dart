@@ -1,17 +1,13 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../deferred/post_auth.dart' deferred as post_auth;
 import '../features/auth/callback_page.dart';
 import '../features/auth/login_page.dart';
-import '../features/health/health_page.dart';
-import '../features/shell/admin_shell.dart';
-import '../render/menu_route_page.dart';
-import '../render/render_page.dart';
-import '../widgets/common.dart';
 import 'auth/auth_controller.dart';
 import 'config.dart';
-import '../features/preview/preview_page.dart';
+import 'deferred_page.dart';
 
 /// Page → permission code (menu `perms`). The server enforces the same codes; this only avoids
 /// rendering pages the user can't use (deep links / stale bookmarks → /403).
@@ -23,6 +19,18 @@ const Map<String, String> kRoutePerms = {
 };
 
 const _public = {'/login', '/auth/callback', '/health'};
+
+Future<void>? _postAuthLoad;
+
+Future<void> _ensurePostAuth() => _postAuthLoad ??= () async {
+      await post_auth.loadLibrary();
+      post_auth.ensurePostAuthReady();
+    }();
+
+Widget _postAuthPage(WidgetBuilder builder) => DeferredPage(
+      loader: _ensurePostAuth,
+      builder: builder,
+    );
 
 /// Pure guard (unit-tested): returns a redirect target or null.
 String? authRedirect(AuthState auth, Uri uri) {
@@ -68,61 +76,98 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Dev/preview (NO_AUTH): shell-free SDUI host, e.g. /#/preview/showcase.index
       GoRoute(
         path: '/preview/:page',
-        builder: (_, s) => PreviewPage(
-          key: ValueKey(s.uri.toString()),
-          page: s.pathParameters['page']!,
-          params: s.uri.queryParameters,
+        builder: (_, s) => _postAuthPage(
+          (_) => post_auth.PreviewPage(
+            key: ValueKey(s.uri.toString()),
+            page: s.pathParameters['page']!,
+            params: s.uri.queryParameters,
+          ),
         ),
       ),
       GoRoute(
         path: '/auth/callback',
         builder: (_, s) => CallbackPage(params: s.uri.queryParameters),
       ),
-      GoRoute(path: '/health', builder: (_, _) => const HealthPage()),
+      GoRoute(
+        path: '/health',
+        builder: (_, _) => _postAuthPage((_) => post_auth.HealthPage()),
+      ),
       ShellRoute(
-        builder: (_, s, child) => UuimsShell(location: s.uri.path, child: child),
+        builder: (_, s, child) => _postAuthPage(
+          (_) => post_auth.UuimsShell(location: s.uri.path, child: child),
+        ),
         routes: [
           GoRoute(path: '/', redirect: (_, _) => '/dashboard'),
           // Former current-account page: content lives in settings modal account tab.
           GoRoute(path: '/account', redirect: (_, _) => '/dashboard?settings=account'),
-          GoRoute(path: '/403', builder: (_, _) => const ForbiddenPage()),
+          GoRoute(
+            path: '/403',
+            builder: (_, _) => _postAuthPage((_) => post_auth.ForbiddenPage()),
+          ),
           // R4: every P1 system page is rendered from its menu.json page (users / roles / menus /
           // depts); only registered custom pages (role-permission-editor) are hand-written.
           for (final p in const ['/system/users', '/system/roles', '/system/menus', '/system/depts'])
             GoRoute(
               path: p,
-              builder: (_, s) => MenuRoutePage(path: p, params: s.uri.queryParameters, fallback: const NotFoundPage()),
+              builder: (_, s) => _postAuthPage(
+                (_) => post_auth.MenuRoutePage(
+                  path: p,
+                  params: s.uri.queryParameters,
+                  fallback: post_auth.NotFoundPage(),
+                ),
+              ),
             ),
-          // R3: 首页 (= 原平台概览, menu.json page uuims.dashboard.overview).
+          // R3: 首页 (= 原平台概览 menu.json page uuims.dashboard.overview).
           GoRoute(
             path: '/dashboard',
-            builder: (_, s) => MenuRoutePage(path: '/dashboard', params: s.uri.queryParameters, fallback: const NotFoundPage()),
+            builder: (_, s) => _postAuthPage(
+              (_) => post_auth.MenuRoutePage(
+                path: '/dashboard',
+                params: s.uri.queryParameters,
+                fallback: post_auth.NotFoundPage(),
+              ),
+            ),
           ),
           // Generic pages by code (openForm mode "page", deep links): /p/uuims.system.uuims-form?id=3
           GoRoute(
             path: '/p/:page',
-            builder: (_, s) => RenderPage(key: ValueKey(s.uri.toString()), page: s.pathParameters['page']!, params: s.uri.queryParameters),
+            builder: (_, s) => _postAuthPage(
+              (_) => post_auth.RenderPage(
+                key: ValueKey(s.uri.toString()),
+                page: s.pathParameters['page']!,
+                params: s.uri.queryParameters,
+              ),
+            ),
           ),
           // Menu paths without a hand-written route stay inside ShellRoute so the sidebar
           // Scrollable is not remounted (errorBuilder used to wrap a fresh UuimsShell each time).
           GoRoute(
             path: '/:path(.*)',
-            builder: (_, s) => MenuRoutePage(
-              path: s.uri.path,
-              params: s.uri.queryParameters,
-              fallback: const NotFoundPage(),
+            builder: (_, s) => _postAuthPage(
+              (_) => post_auth.MenuRoutePage(
+                path: s.uri.path,
+                params: s.uri.queryParameters,
+                fallback: post_auth.NotFoundPage(),
+              ),
             ),
           ),
         ],
       ),
     ],
     // True routing failures only (menu catch-all lives in ShellRoute above).
-    errorBuilder: (_, s) => UuimsShell(
-      location: s.uri.path,
-      child: MenuRoutePage(path: s.uri.path, params: s.uri.queryParameters, fallback: const NotFoundPage()),
+    errorBuilder: (_, s) => _postAuthPage(
+      (_) => post_auth.UuimsShell(
+        location: s.uri.path,
+        child: post_auth.MenuRoutePage(
+          path: s.uri.path,
+          params: s.uri.queryParameters,
+          fallback: post_auth.NotFoundPage(),
+        ),
+      ),
     ),
   );
 });
 
 @visibleForTesting
 Set<String> get publicRoutes => _public;
+

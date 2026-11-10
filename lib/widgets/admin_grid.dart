@@ -51,7 +51,7 @@ class UuimsGrid extends StatelessWidget {
               readOnly: true,
               enableContextMenu: false,
               enableColumnDrag: false,
-              enableDropToResize: false,
+              enableDropToResize: true,
               enableSorting: c.cell == null,
               frozen: switch (c.frozen) {
                 GridFrozen.start => TrinaColumnFrozen.start,
@@ -72,7 +72,7 @@ class UuimsGrid extends StatelessWidget {
         ],
         noRowsWidget: Center(child: Text(tr('暂无数据'))),
         configuration: TrinaGridConfiguration(
-          columnSize: const TrinaGridColumnSizeConfig(autoSizeMode: TrinaAutoSizeMode.scale),
+          columnSize: const TrinaGridColumnSizeConfig(autoSizeMode: TrinaAutoSizeMode.none),
           style: TrinaGridStyleConfig(
             gridBackgroundColor: cs.card,
             rowColor: cs.card,

@@ -131,20 +131,35 @@ class OptionSelect<T> extends StatelessWidget {
 }
 
 class PageHeader extends StatelessWidget {
-  const PageHeader({super.key, required this.title, this.actions = const []});
+  const PageHeader({super.key, required this.title, this.breadcrumb = const [], this.actions = const []});
 
   final String title;
+  final List<String> breadcrumb;
   final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
+    final t = ShadTheme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(title, style: ShadTheme.of(context).textTheme.h4),
-          const Spacer(),
-          ...actions.expand((w) => [w, const SizedBox(width: 8)]),
+          if (breadcrumb.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                breadcrumb.join(' / '),
+                style: t.textTheme.muted.copyWith(fontSize: 12),
+              ),
+            ),
+          Row(
+            children: [
+              Flexible(child: Text(title, style: t.textTheme.h4, overflow: TextOverflow.ellipsis)),
+              const Spacer(),
+              ...actions.expand((w) => [w, const SizedBox(width: 8)]),
+            ],
+          ),
         ],
       ),
     );

@@ -83,9 +83,9 @@ class _RolePermissionEditorState extends ConsumerState<RolePermissionEditor> {
     try {
       final results = await Future.wait([
         api.get(load),
-        api.get(_page.path('menus') ?? '/uuims/api/system/menus'),
-        api.get(_page.path('depts') ?? '/uuims/api/system/depts'),
-        api.get(_page.path('fields') ?? '/uuims/api/system/fields'),
+        api.get(_page.path('menus') ?? '/admin/api/system/menus'),
+        api.get(_page.path('depts') ?? '/admin/api/system/depts'),
+        api.get(_page.path('fields') ?? '/admin/api/system/fields'),
       ]);
       final r = asJson(results[0]);
       _role = r;

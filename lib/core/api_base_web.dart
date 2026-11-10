@@ -6,10 +6,16 @@ import 'dart:js_interop';
 @JS('__LOONGS_API_BASE_URL__')
 external JSString? get _loongsApiBaseUrl;
 
-String? readRuntimeApiBaseUrl() {
-  final v = _loongsApiBaseUrl;
+@JS('__LOONGS_OAUTH_ISSUER__')
+external JSString? get _loongsOAuthIssuer;
+
+String? _readJsString(JSString? v) {
   if (v == null) return null;
   final s = v.toDart.trim();
   if (s.isEmpty) return null;
   return s;
 }
+
+String? readRuntimeApiBaseUrl() => _readJsString(_loongsApiBaseUrl);
+
+String? readRuntimeOAuthIssuer() => _readJsString(_loongsOAuthIssuer);

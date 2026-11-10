@@ -46,6 +46,15 @@ String effectiveApiBaseUrl({String? pageHost}) {
   return resolveBaseUrl(configured, pageHost: pageHost);
 }
 
+/// OAuth authorization server origin. Prefer `window.__LOONGS_OAUTH_ISSUER__`, else API base.
+String effectiveOAuthIssuer({String? pageHost}) {
+  final runtime = readRuntimeOAuthIssuer();
+  if (runtime != null && runtime.isNotEmpty) {
+    return resolveBaseUrl(runtime, pageHost: pageHost);
+  }
+  return effectiveApiBaseUrl(pageHost: pageHost);
+}
+
 /// Effective web token storage mode for [configured] (see [kWebTokenStorage]).
 String resolveWebTokenStorage(String configured, {required bool secureContext}) => switch (configured) {
       'secure' || 'session' || 'memory' => configured,

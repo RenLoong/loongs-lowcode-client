@@ -1,6 +1,6 @@
 import '../core/i18n.dart';
 
-/// Current uuims (GET /uuims/api/auth/me).
+/// Current uuims (GET /admin/api/auth/me).
 class Profile {
   const Profile({
     required this.id,
@@ -67,7 +67,7 @@ class Profile {
   bool can(String code) => isSuper || permissions.contains('*') || permissions.contains(code);
 }
 
-/// Sidebar node (GET /uuims/api/auth/menus): dir or menu, buttons are not included. Menus come
+/// Sidebar node (GET /admin/api/auth/menus): dir or menu, buttons are not included. Menus come
 /// from the server's apps/*/menu.json files; [key] is stable (perms code or path), not a DB id.
 class MenuNode {
   const MenuNode({

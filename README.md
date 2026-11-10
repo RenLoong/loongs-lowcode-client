@@ -1,17 +1,19 @@
 # client
 
-LOONGS platform uuims (PC)
+LOONGS platform uuims client（Flutter）
 
-## Getting Started
+打包目标：**Windows、Linux、macOS、Android 平板、iOS 平板**。不构建 web。
 
-This project is a starting point for a Flutter application.
+## 打包
 
-A few resources to get you started if this is your first Flutter project:
+按所在系统选用脚本（需本机已按 `.fvmrc` 安装 FVM / Flutter，脚本不会自动 `fvm install`）：
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+| 脚本 | 系统 | 产物 |
+|------|------|------|
+| `.\pack.ps1` | Windows | `dist/uuims-pc-windows.zip`（可选 Inno 安装包）+ `dist/uuims-android-tablet.apk` |
+| `./pack.sh` | Linux / WSL | `dist/uuims-pc-linux.zip` + `dist/uuims-android-tablet.apk` |
+| `./pack.command` | macOS | `dist/uuims-pc-macos.zip` + `dist/uuims-ios-tablet.zip` + `dist/uuims-android-tablet.apk` |
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+平板限制：Android 要求最小宽度 600dp（large/xlarge）；iOS 仅 iPad。Android 需本机 SDK；iOS 仅 macOS + Xcode，默认未签名。
+
+可用 `--skip-windows` / `-SkipWindows`、`--skip-linux`、`--skip-macos`、`--skip-android`、`--skip-ios` 跳过对应目标。

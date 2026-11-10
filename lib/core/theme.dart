@@ -1,8 +1,9 @@
 /// Apple-style (HIG) look for shadcn_ui: systemBlue accent, grouped backgrounds, large radii,
 /// grouped backgrounds with little or no divider lines, subtle shadows, iOS-green switches, sheet-like dialogs. Light and dark use
-/// the same semantic names, so widgets only ever read the theme (README §19).
+/// the same semantic names, so widgets only ever read the theme (README 鎼?9).
 library;
 
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -63,7 +64,7 @@ class AppleColors {
   static AppleColors of(BuildContext context) =>
       ShadTheme.of(context).brightness == Brightness.dark ? dark : light;
 
-  /// Semantic token (success | warning | danger | error | info | primary) → color; null otherwise.
+  /// Semantic token (success | warning | danger | error | info | primary) 閳?color; null otherwise.
   Color? semantic(String? token) => switch (token) {
         'success' => green,
         'warning' => orange,
@@ -72,6 +73,18 @@ class AppleColors {
         _ => null,
       };
 }
+
+/// UI font: web uses bundled Noto Sans SC (~1.2MB subset, no fonts.gstatic);
+/// desktop prefers system faces with Noto as CanvasKit/Skia fallback.
+String get appleUiFontFamily {
+  if (kIsWeb) return 'Noto Sans SC';
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.windows => 'Microsoft YaHei',
+    _ => 'PingFang SC',
+  };
+}
+
+const List<String> appleUiFontFamilyFallback = ['Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', 'sans-serif'];
 
 /// Hairline width (0.5 logical px; 1 device px on 2x screens).
 const double kHairline = 0.5;
@@ -126,11 +139,11 @@ ShadThemeData appleTheme(Brightness b) {
     brightness: b,
     colorScheme: cs,
     radius: r10,
-    textTheme: ShadTextTheme(family: 'PingFangSC'),
+    textTheme: ShadTextTheme(family: appleUiFontFamily),
     cardTheme: ShadCardTheme(
       radius: r8,
       backgroundColor: c.card,
-      // no outline between cards: grouped background + spacing, not a hairline (README §19)
+      // no outline between cards: grouped background + spacing, not a hairline (README 鎼?9)
       border: ShadBorder.all(color: Color(0x00000000), width: 0, radius: r8),
       shadows: appleShadow(b),
     ),

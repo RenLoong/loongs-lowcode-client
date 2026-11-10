@@ -5,6 +5,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../core/i18n.dart';
 import '../page_desc.dart';
 import 'fields.dart';
+import '../../widgets/date_range_picker.dart';
 
 Color? _parseColor(Object? raw) {
   if (raw == null) return null;
@@ -624,9 +625,9 @@ class DateTimeFields {
         return;
       }
       if (comp == 'dateRange') {
-        final range = await showDateRangePicker(
+        final range = await showAppDateRangePicker(
           context: context,
-          firstDate: DateTime(2000),
+          firstDate: DateTime(1970),
           lastDate: DateTime(2100),
           initialDateRange: _parseRange('${form[name] ?? ''}'),
         );
@@ -641,7 +642,7 @@ class DateTimeFields {
       final d = await showDatePicker(
         context: context,
         initialDate: initial,
-        firstDate: DateTime(2000),
+        firstDate: DateTime(1970),
         lastDate: DateTime(2100),
       );
       if (d == null) return;

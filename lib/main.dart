@@ -7,11 +7,10 @@ import 'app.dart';
 import 'core/i18n.dart';
 import 'core/prefs.dart';
 import 'core/settings.dart';
-import 'features/system/role_permission_editor.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  registerSystemCustomPages(); // RENDER.md §9 registered custom pages
+  // Custom pages register when post-auth deferred library loads (see deferred/post_auth.dart).
   final prefs = await loadPrefs(); // language + theme mode (README §19)
   currentLanguage = normalizeLanguage(prefs.get(kPrefLanguage));
 

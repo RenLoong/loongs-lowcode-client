@@ -208,7 +208,11 @@ class _RenderTableViewState extends ConsumerState<RenderTableView> {
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            for (final f in search) SizedBox(width: 200, child: buildField(context, f, _search, _env, dense: true)),
+            for (final f in search)
+              SizedBox(
+                width: '${f['component']}' == 'dateRange' ? 280 : 200,
+                child: buildField(context, f, _search, _env, dense: true),
+              ),
             ShadButton(onPressed: () => _load(1), child: Text(tr('查询'))),
             ShadButton.outline(
               onPressed: () {
@@ -250,9 +254,7 @@ class _RenderTableViewState extends ConsumerState<RenderTableView> {
                 text: (r) => columnText(c, r),
                 cell: '${c['field']}' == treeColumn
                     ? (r) => _treeCell(context, c, r)
-                    : c['component'] == 'text' || c['component'] == 'datetime' || c['component'] == 'money'
-                        ? null
-                        : (r) => buildCell(context, c, r),
+                    : (r) => buildCell(context, c, r),
               ),
             if (rowActions.isNotEmpty)
               GridCol(tr('操作'), '_actions', width: (rowActions.length * 76 + 24).toDouble(), cell: (r) => Row(children: [
@@ -278,7 +280,6 @@ class _RenderTableViewState extends ConsumerState<RenderTableView> {
     final k = '${r['_key']}';
     final depth = (r['_depth'] as int?) ?? 0;
     final open = !_collapsed.contains(k);
-    final plain = c['component'] == 'text' || c['component'] == 'datetime' || c['component'] == 'money';
     return Row(children: [
       SizedBox(width: depth * 18.0),
       if (r['_leaf'] == true)
@@ -294,7 +295,7 @@ class _RenderTableViewState extends ConsumerState<RenderTableView> {
           ),
         ),
       Expanded(
-        child: plain ? Text(columnText(c, r), overflow: TextOverflow.ellipsis) : buildCell(context, c, r),
+        child: buildCell(context, c, r),
       ),
     ]);
   }

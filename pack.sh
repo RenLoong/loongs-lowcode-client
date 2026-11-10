@@ -1,37 +1,38 @@
 #!/usr/bin/env bash
-# Linux / WSL pack for 统一用户身份管理系统（UUIMS） PC (run from uuims/client).
-# Builds: web + linux only. Uses native Linux `fvm` + .fvmrc (no auto-install).
+# Linux / WSL pack for 统一用户身份管理系统（UUIMS） client (run from client root).
+# Builds: linux + Android tablet. Does not build web.
 # Windows → .\pack.ps1   |   macOS → ./pack.command
 #
 #   ./pack.sh
-#   ./pack.sh --skip-web
-#   ./pack.sh --linux
-#   ./pack.sh --skip-web --linux
+#   ./pack.sh --skip-linux
+#   ./pack.sh --skip-android
 
 set -euo pipefail
 
-SKIP_WEB=0
-DO_LINUX=0
+DO_LINUX=1
+DO_ANDROID=1
 # NOTE: do not write ${VAR:-http://{host}:21000} — bash ends the default at the first '}'
 # which corrupts it to http://{host:21000}.
 _DEFAULT_API_BASE_URL='http://{host}:21000'
 API_BASE_URL="${API_BASE_URL:-$_DEFAULT_API_BASE_URL}"
-BASE_HREF="${BASE_HREF:-/uuims/web/}"
 
 die() { echo "$*" >&2; exit 1; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --skip-web) SKIP_WEB=1; shift ;;
     --linux) DO_LINUX=1; shift ;;
     --skip-linux) DO_LINUX=0; shift ;;
+    --android) DO_ANDROID=1; shift ;;
+    --skip-android) DO_ANDROID=0; shift ;;
     --api-base-url) API_BASE_URL="$2"; shift 2 ;;
-    --base-href) BASE_HREF="$2"; shift 2 ;;
-    --windows|--skip-windows|-SkipWindows)
-      die "Windows 请在 Windows 上执行: .\\pack.ps1（本脚本 pack.sh 只构建 web / linux）"
+    --skip-web|--web|--base-href)
+      die "已不再构建 web。本脚本只构建 linux 与 Android 平板。"
       ;;
-    --macos|--osx|--skip-macos)
-      die "macOS 请在 macOS 上执行: ./pack.command（本脚本 pack.sh 只构建 web / linux）"
+    --windows|--skip-windows|-SkipWindows)
+      die "Windows 请在 Windows 上执行: .\\pack.ps1（本脚本 pack.sh 只构建 linux / Android 平板）"
+      ;;
+    --macos|--osx|--ios|--skip-macos|--skip-ios)
+      die "macOS / iOS 平板请在 macOS 上执行: ./pack.command"
       ;;
     --flutter-version)
       die "不要传 --flutter-version；请在 .fvmrc 中固定版本"
@@ -48,7 +49,6 @@ export FLUTTER_STORAGE_BASE_URL="${FLUTTER_STORAGE_BASE_URL:-https://storage.flu
 export PUB_HOSTED_URL="${PUB_HOSTED_URL:-https://pub.flutter-io.cn}"
 
 CLIENT_ROOT="$(cd "$(dirname "$0")" && pwd)"
-PUBLIC_WEB="$CLIENT_ROOT/../server/apps/Uuims/public/web"
 DIST_DIR="$CLIENT_ROOT/dist"
 
 step() { printf '\n==> %s\n' "$*"; }
@@ -74,6 +74,14 @@ resolve_linux_fvm() {
   return 1
 }
 
+find_android_sdk() {
+  local d
+  for d in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" "$HOME/Android/Sdk" /opt/android-sdk /opt/Android/Sdk; do
+    [[ -n "$d" && -d "$d/platform-tools" ]] && printf '%s\n' "$d" && return 0
+  done
+  return 1
+}
+
 FVM_BIN="$(resolve_linux_fvm || true)"
 if [[ -z "${FVM_BIN:-}" ]]; then
   cat >&2 <<'MSG'
@@ -85,7 +93,7 @@ if [[ -z "${FVM_BIN:-}" ]]; then
 
 若 /usr/local/bin/fvm 是 Windows 包装，请删掉或移走后再装 Linux 版。
 Windows 桌面包请用: .\pack.ps1
-macOS 桌面包请用: ./pack.command
+macOS / iOS 平板请用: ./pack.command
 MSG
   exit 127
 fi
@@ -118,29 +126,6 @@ fi
 "$FVM_BIN" use "$PINNED" --force
 "$FVM_BIN" flutter --version
 
-if [[ "$SKIP_WEB" -eq 0 ]]; then
-  step "fvm flutter build web"
-  "$FVM_BIN" flutter pub get
-  "$FVM_BIN" flutter build web --release --base-href "$BASE_HREF" --dart-define="API_BASE_URL=$API_BASE_URL"
-  test -f build/web/index.html
-  step "Copy build/web -> $PUBLIC_WEB"
-  mkdir -p "$PUBLIC_WEB"
-  find "$PUBLIC_WEB" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-  cp -a build/web/. "$PUBLIC_WEB"/
-  if [[ -f "$CLIENT_ROOT/tools/fix_geist_font_names.py" ]]; then
-    python3 "$CLIENT_ROOT/tools/fix_geist_font_names.py" \
-      "$CLIENT_ROOT/build/web/assets" \
-      "$PUBLIC_WEB/assets" || true
-  fi
-  if [[ -f "$CLIENT_ROOT/tools/reorganize_web_js.py" ]]; then
-    step "Reorganize web JS -> js/ + spa.html (ClientEntry injects API base)"
-    python3 "$CLIENT_ROOT/tools/reorganize_web_js.py" "$PUBLIC_WEB" "$API_BASE_URL"
-  fi
-  echo "OK public/web"
-else
-  echo "Skip web"
-fi
-
 if [[ "$DO_LINUX" -eq 1 ]]; then
   step "fvm flutter build linux"
   "$FVM_BIN" flutter pub get
@@ -160,7 +145,29 @@ if [[ "$DO_LINUX" -eq 1 ]]; then
   (cd "$RELEASE" && zip -r -q "$ZIP" .)
   echo "OK $ZIP"
 else
-  echo "Skip linux（需要时加 --linux）"
+  echo "Skip linux"
 fi
 
-printf '\nDone (Linux pack.sh, .fvmrc=%s).\n' "$PINNED"
+if [[ "$DO_ANDROID" -eq 1 ]]; then
+  if [[ ! -d "$CLIENT_ROOT/android" ]]; then
+    echo "Skip Android tablet（缺少 android/ 平台目录）" >&2
+  elif ! ANDROID_SDK="$(find_android_sdk)"; then
+    echo "Skip Android tablet（未找到 Android SDK。请安装 SDK 并设置 ANDROID_HOME 或 ANDROID_SDK_ROOT）" >&2
+  else
+    export ANDROID_HOME="${ANDROID_HOME:-$ANDROID_SDK}"
+    export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_SDK}"
+    echo "ANDROID_SDK=$ANDROID_SDK"
+    step "fvm flutter build apk (Android tablet)"
+    "$FVM_BIN" flutter pub get
+    "$FVM_BIN" flutter build apk --release --dart-define="API_BASE_URL=$API_BASE_URL"
+    APK="$CLIENT_ROOT/build/app/outputs/flutter-apk/app-release.apk"
+    [[ -f "$APK" ]] || die "missing $APK"
+    mkdir -p "$DIST_DIR"
+    cp -f "$APK" "$DIST_DIR/uuims-android-tablet.apk"
+    echo "OK $DIST_DIR/uuims-android-tablet.apk"
+  fi
+else
+  echo "Skip Android tablet"
+fi
+
+printf '\nDone (Linux pack.sh, .fvmrc=%s). Targets: linux + android tablet (no web).\n' "$PINNED"

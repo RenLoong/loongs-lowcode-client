@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../core/api.dart';
+import '../core/i18n.dart';
+import '../widgets/common.dart';
 import 'action_runner.dart';
 import 'blocks/block_scope.dart';
 import 'blocks/blocks.dart';
@@ -11,7 +13,6 @@ import 'components/cells.dart';
 import 'page_desc.dart';
 import 'render_api.dart';
 import 'template.dart';
-import '../core/i18n.dart';
 
 /// Detail page (RENDER.md §6.4): loads the record from `load` (`{id}` from the route params),
 /// header (title template, tag columns, actions with visibleWhen / hiddenWhen), then tabs of blocks
@@ -36,8 +37,19 @@ class _DetailViewState extends ConsumerState<DetailView> {
 
   Json get _body => widget.desc.body;
 
+  /// Route/query params with Showcase-friendly default `id=1` when missing
+  /// (sidebar menu `/showcase/detail` has no query).
+  Json get _params {
+    final p = Map<String, dynamic>.from(widget.params);
+    final id = p['id'];
+    if (id == null || '$id'.trim().isEmpty) {
+      p['id'] = '1';
+    }
+    return p;
+  }
+
   /// Record ∪ params, rebuilt only when the record is (re)loaded so blocks keep their data.
-  late Json _data = {...widget.params};
+  late Json _data = {..._params};
 
   @override
   void initState() {
@@ -52,7 +64,7 @@ class _DetailViewState extends ConsumerState<DetailView> {
   }
 
   Future<void> _load() async {
-    final path = _body['load'] is String ? fillPath(_body['load'] as String, widget.params) : null;
+    final path = _body['load'] is String ? fillPath(_body['load'] as String, _params) : null;
     if (path == null) {
       setState(() {
         _loading = false;
@@ -66,7 +78,7 @@ class _DetailViewState extends ConsumerState<DetailView> {
       if (!mounted) return;
       setState(() {
         _record = r is Map ? r.cast<String, dynamic>() : <String, dynamic>{};
-        _data = {...widget.params, ..._record!};
+        _data = {..._params, ..._record!};
         _error = null;
         _loading = false;
       });
@@ -121,9 +133,10 @@ class _DetailViewState extends ConsumerState<DetailView> {
       loader: _loader,
       onAction: (a, d) => _runner(context).run(a, d),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        PageHeader(
+          title: widget.desc.title,
+          breadcrumb: widget.desc.breadcrumb,
+          actions: [
             if (canPop)
               ShadButton.ghost(
                 size: ShadButtonSize.sm,
@@ -131,49 +144,73 @@ class _DetailViewState extends ConsumerState<DetailView> {
                 onPressed: () => Navigator.of(context).maybePop(),
                 child: Text(tr('返回')),
               ),
-            Text(widget.desc.title, style: t.textTheme.muted),
-          ]),
+            ShadButton.outline(
+              size: ShadButtonSize.sm,
+              leading: const Icon(LucideIcons.refreshCw, size: 16),
+              onPressed: _refreshAll,
+              child: Text(tr('刷新')),
+            ),
+          ],
         ),
         Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          Flexible(child: Text(fillText('${header['title'] ?? widget.desc.title}', data), style: t.textTheme.h4, overflow: TextOverflow.ellipsis)),
+          Flexible(
+            child: Text(
+              fillText('${header['title'] ?? widget.desc.title}', data),
+              style: t.textTheme.h4,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           const SizedBox(width: 10),
           for (final c in asJsonList(header['tags']))
-            Padding(padding: const EdgeInsets.only(right: 6), child: SizedBox(height: 24, child: buildCell(context, c, data))),
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: SizedBox(height: 24, child: buildCell(context, c, data)),
+            ),
           const Spacer(),
           Wrap(spacing: 8, children: [
             for (final a in asJsonList(header['actions']))
-              if (actionVisible(a, data)) actionButton(a, () => _runner(context).run(a, data), label: fillText('${a['label']}', data)),
+              if (actionVisible(a, data))
+                actionButton(a, () => _runner(context).run(a, data), label: fillText('${a['label']}', data)),
           ]),
         ]),
         const SizedBox(height: 12),
         if (tabs.isNotEmpty) ...[
           SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(children: [
-                for (final (i, tb) in tabs.indexed)
-                  MergeSemantics(
-                    child: Semantics(
-                      button: true,
-                      selected: i == _tab,
-                      child: GestureDetector(
-                    key: ValueKey('detail-tab-$i'),
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => setState(() => _tab = i),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(width: 2, color: i == _tab ? t.colorScheme.primary : Colors.transparent)),
-                      ),
-                      child: Text(
-                        fillText('${tb['title'] ?? ''}', data),
-                        style: TextStyle(fontSize: 14, fontWeight: i == _tab ? FontWeight.w600 : FontWeight.normal, color: i == _tab ? t.colorScheme.foreground : t.colorScheme.mutedForeground),
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [
+              for (final (i, tb) in tabs.indexed)
+                MergeSemantics(
+                  child: Semantics(
+                    button: true,
+                    selected: i == _tab,
+                    child: GestureDetector(
+                      key: ValueKey('detail-tab-$i'),
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => setState(() => _tab = i),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              width: 2,
+                              color: i == _tab ? t.colorScheme.primary : Colors.transparent,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          fillText('${tb['title'] ?? ''}', data),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: i == _tab ? FontWeight.w600 : FontWeight.normal,
+                            color: i == _tab ? t.colorScheme.foreground : t.colorScheme.mutedForeground,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                    ),
-                  ),
-              ]),
-            ),
+                ),
+            ]),
+          ),
           const SizedBox(height: 12),
         ],
         Expanded(

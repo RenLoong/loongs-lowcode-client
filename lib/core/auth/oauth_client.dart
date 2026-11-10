@@ -47,8 +47,8 @@ class OAuthClient {
         'code_challenge': pkce.challenge,
         'code_challenge_method': 'S256',
         // login page language / theme (OIDC ui_locales; ui_theme is a loongs extension)
-        'ui_locales': ?uiLocales,
-        'ui_theme': ?uiTheme,
+        if (uiLocales != null) 'ui_locales': uiLocales,
+        if (uiTheme != null) 'ui_theme': uiTheme,
       });
 
   Future<TokenSet> exchangeCode({

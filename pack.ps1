@@ -1,25 +1,24 @@
-# Windows pack for 统一用户身份管理系统（UUIMS） PC (run in PowerShell from uuims/client).
-# Builds: web + windows only. Uses Windows `fvm` + .fvmrc (no auto-install).
+# Windows pack for 统一用户身份管理系统（UUIMS） client (run in PowerShell from client root).
+# Builds: windows + Android tablet. Does not build web.
 # Linux/WSL → ./pack.sh   |   macOS → ./pack.command
 #
 #   .\pack.ps1
-#   .\pack.ps1 -SkipWeb
 #   .\pack.ps1 -SkipWindows
+#   .\pack.ps1 -SkipAndroid
 
 [CmdletBinding()]
 param(
-    [switch]$SkipWeb,
     [switch]$SkipWindows,
+    [switch]$SkipAndroid,
     [string]$ApiBaseUrl = 'http://{host}:21000',
-    [string]$BaseHref = '/uuims/web/',
     [string]$Iscc = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $ClientRoot = $PSScriptRoot
-$PublicWeb = Join-Path $ClientRoot '..\server\apps\Uuims\public\web'
 $DistDir = Join-Path $ClientRoot 'dist'
 $ZipPath = Join-Path $DistDir 'uuims-pc-windows.zip'
+$ApkPath = Join-Path $DistDir 'uuims-android-tablet.apk'
 
 if (-not $env:FLUTTER_STORAGE_BASE_URL) { $env:FLUTTER_STORAGE_BASE_URL = 'https://storage.flutter-io.cn' }
 if (-not $env:PUB_HOSTED_URL) { $env:PUB_HOSTED_URL = 'https://pub.flutter-io.cn' }
@@ -88,6 +87,14 @@ function Test-FlutterSdk([string]$version) {
     return $null
 }
 
+function Test-AndroidSdk {
+    $dirs = @($env:ANDROID_HOME, $env:ANDROID_SDK_ROOT, (Join-Path $env:LOCALAPPDATA 'Android\Sdk'))
+    foreach ($d in $dirs) {
+        if ($d -and (Test-Path (Join-Path $d 'platform-tools'))) { return $d }
+    }
+    return $null
+}
+
 $fvm = Resolve-Fvm
 Write-Host "fvm=$fvm"
 
@@ -97,7 +104,7 @@ if (Test-UncPath $ClientRoot) {
     Write-Step "Stage UNC -> $stage"
     if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $stage | Out-Null
-    robocopy $ClientRoot $stage /E /XJ /XD build .dart_tool .idea .git dist linux macos ios android ephemeral .plugin_symlinks /NFL /NDL /NJH /NJS /nc /ns /np /R:1 /W:1 | Out-Null
+    robocopy $ClientRoot $stage /E /XJ /XD build .dart_tool .idea .git dist linux macos ios ephemeral .plugin_symlinks /NFL /NDL /NJH /NJS /nc /ns /np /R:1 /W:1 | Out-Null
     if ($LASTEXITCODE -ge 8) { throw "robocopy failed ($LASTEXITCODE)" }
     $global:LASTEXITCODE = 0
     $buildRoot = $stage
@@ -116,40 +123,6 @@ try {
     & $fvm use $pinned --force
     if ($LASTEXITCODE -ne 0) { throw "fvm use failed ($LASTEXITCODE)" }
     & $fvm flutter --version
-
-    if (-not $SkipWeb) {
-        Write-Step "fvm flutter build web"
-        & $fvm flutter pub get
-        if ($LASTEXITCODE -ne 0) { throw "fvm flutter pub get failed" }
-        & $fvm flutter build web --release --base-href $BaseHref --dart-define="API_BASE_URL=$ApiBaseUrl"
-        if ($LASTEXITCODE -ne 0) { throw "fvm flutter build web failed" }
-        $buildWeb = Join-Path $buildRoot 'build\web'
-        if (-not (Test-Path (Join-Path $buildWeb 'index.html'))) { throw "missing build/web/index.html" }
-        Write-Step "Copy build/web -> $PublicWeb"
-        New-Item -ItemType Directory -Force -Path $PublicWeb | Out-Null
-        Get-ChildItem -Force $PublicWeb -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
-        Copy-Item (Join-Path $buildWeb '*') $PublicWeb -Recurse -Force
-        $fixer = Join-Path $ClientRoot 'tools\fix_geist_font_names.py'
-        if (Test-Path $fixer) {
-            $py = Get-Command python -ErrorAction SilentlyContinue
-            if (-not $py) { $py = Get-Command python3 -ErrorAction SilentlyContinue }
-            if ($py) {
-                & $py.Source $fixer (Join-Path $buildWeb 'assets') (Join-Path $PublicWeb 'assets')
-            }
-        }
-        $reorg = Join-Path $ClientRoot 'tools\reorganize_web_js.py'
-        if (Test-Path $reorg) {
-            Write-Step "Reorganize web JS -> js/ + spa.html (ClientEntry injects API base)"
-            $py = Get-Command python -ErrorAction SilentlyContinue
-            if (-not $py) { $py = Get-Command python3 -ErrorAction SilentlyContinue }
-            if (-not $py) { throw "python/python3 required for reorganize_web_js.py" }
-            & $py.Source $reorg $PublicWeb $ApiBaseUrl
-            if ($LASTEXITCODE -ne 0) { throw "reorganize_web_js.py failed ($LASTEXITCODE)" }
-        }
-        Write-Host "OK public/web"
-    } else {
-        Write-Host "Skip web"
-    }
 
     if (-not $SkipWindows) {
         Write-Step "fvm flutter build windows"
@@ -215,9 +188,35 @@ try {
     } else {
         Write-Host "Skip Windows"
     }
+
+    if (-not $SkipAndroid) {
+        $androidDir = Join-Path $buildRoot 'android'
+        $androidSdk = Test-AndroidSdk
+        if (-not (Test-Path $androidDir)) {
+            Write-Warning "Skip Android tablet（缺少 android/ 平台目录）"
+        } elseif (-not $androidSdk) {
+            Write-Warning "Skip Android tablet（未找到 Android SDK。请安装 SDK 并设置 ANDROID_HOME 或 ANDROID_SDK_ROOT）"
+        } else {
+            if (-not $env:ANDROID_HOME) { $env:ANDROID_HOME = $androidSdk }
+            if (-not $env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT = $androidSdk }
+            Write-Host "ANDROID_SDK=$androidSdk"
+            Write-Step "fvm flutter build apk (Android tablet)"
+            & $fvm flutter pub get
+            if ($LASTEXITCODE -ne 0) { throw "fvm flutter pub get failed" }
+            & $fvm flutter build apk --release --dart-define="API_BASE_URL=$ApiBaseUrl"
+            if ($LASTEXITCODE -ne 0) { throw "fvm flutter build apk failed" }
+            $apk = Join-Path $buildRoot 'build\app\outputs\flutter-apk\app-release.apk'
+            if (-not (Test-Path $apk)) { throw "missing $apk" }
+            New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
+            Copy-Item $apk $ApkPath -Force
+            Write-Host "OK $ApkPath"
+        }
+    } else {
+        Write-Host "Skip Android tablet"
+    }
 } finally {
     Pop-Location
 }
 
 Write-Host ""
-Write-Host "Done (Windows pack.ps1, .fvmrc=$pinned)." -ForegroundColor Green
+Write-Host "Done (Windows pack.ps1, .fvmrc=$pinned). Targets: windows + android tablet (no web)." -ForegroundColor Green
